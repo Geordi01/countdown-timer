@@ -2,6 +2,7 @@ from tkinter import *
 
 reset_timer = False
 pause_timer = False
+invalid_time = False
 
 def remove():
     global reset_timer, pause_timer
@@ -17,7 +18,6 @@ def remove():
         pause_button.grid_remove()
         reset_button.grid_remove()
         resume_button.grid_remove()
-        print(pause_button.display, resume_button.display)
     
     if pause_timer == False and reset_timer == False:
         resume_button.grid_remove()
@@ -44,32 +44,49 @@ def display():
         resume_button.grid(column=0, row=0)
 
 def start_time():
-    global reset_timer, pause_timer, time_in_seconds, time_hours, time_minutes, time_seconds
+    global reset_timer, pause_timer, invalid_time, time_in_seconds, time_hours, time_minutes, time_seconds
     reset_timer = False
     pause_timer = False
-    remove()
-    display()
+    invalid_time = False
+    
     time_hours = int(time_entry_hours.get())
     time_minutes = int(time_entry_minutes.get())
     time_seconds = int(time_entry_seconds.get())
-    time_in_seconds = time_hours * 3600 + time_minutes * 60 + time_seconds
-    if time_hours < 10:
-        time_hours = f"0{time_hours}"
-    if time_minutes < 10:
-        time_minutes = f"0{time_minutes}"
-    if time_seconds < 10:
-        time_seconds = f"0{time_seconds}"
-    time_text.config(text=f"{time_hours}:{time_minutes}:{time_seconds}")
-    countdown()
+    if time_hours > 99:
+        invalid_time = True
+        error_label.config(text="Hours must be less than 100")
+        raise ValueError("Hours must be less than 100")
+    if time_minutes > 59:
+        invalid_time = True
+        error_label.config(text="Minutes must be less than 60")
+        raise ValueError("Minutes must be less than 60")
+    if time_seconds > 59:
+        invalid_time = True
+        error_label.config(text="Seconds must be less than 60")
+        raise ValueError("Seconds must be less than 60")
+
+    if invalid_time == False:
+        remove()
+        display()
+        error_label.config(text="")
+        time_in_seconds = time_hours * 3600 + time_minutes * 60 + time_seconds
+        if time_hours < 10:
+            time_hours = f"0{time_hours}"
+        if time_minutes < 10:
+            time_minutes = f"0{time_minutes}"
+        if time_seconds < 10:
+            time_seconds = f"0{time_seconds}"
+        time_text.config(text=f"{time_hours}:{time_minutes}:{time_seconds}")
+        countdown()
 
 def countdown():
     global time_in_seconds, time_hours, time_minutes, time_seconds
-    print(f"paused: {pause_timer}, reset: {reset_timer}")
 
+    error_label.config(text="")
     if time_in_seconds > 0 and reset_timer == False and pause_timer == False:
         time_in_seconds -= 1
         time_hours = time_in_seconds // 3600
-        time_minutes = (time_in_seconds // 60) - 60
+        time_minutes = (time_in_seconds % 3600) // 60
         time_seconds = time_in_seconds % 60
         if time_hours < 10:
             time_hours = f"0{time_hours}"
@@ -107,8 +124,7 @@ def reset():
     time_hours = 0
     time_minutes = 0
     time_seconds = 0
-    time_text.config(text="00:00")
-    print(f"paused: {pause_timer}, reset: {reset_timer}")
+    time_text.config(text="00:00:00")
     remove()
     display()
 
@@ -153,6 +169,9 @@ resume_button = Button(button_frame, text="Resume", command=resume_time)
 pause_button.display = False
 reset_button.display = False
 resume_button.display = False
+
+error_label = Label(root, text="", fg="red")
+error_label.grid(column=0, row=5)
 
 start_button.grid(column=1, row=0)
 
